@@ -1,0 +1,65 @@
+---
+title: "Imputed QCEW Datasets"
+
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.Setup
+```{r message = F}
+library(tidyverse)
+library(furrr)
+ 
+qcew_imputed = readRDS("./data/QCEW_imputations_20211006.Rds")
+```
+
+## 2.Data Structure
+
+The list `qcew_imputed` contains 10 imputed QCEW datasets:
+```{r}
+print(names(qcew_imputed))
+```
+
+Each imputed QCEW dataset is of size `r nrow(qcew_imputed[[1]])` by `r ncol(qcew_imputed[[1]])`.
+
+Each row is an industry, there are `r nrow(qcew_imputed[[1]])` industries.
+
+Each row has employment data for the following 20 quarters:
+```{r}
+print(colnames(qcew_imputed$`imputation-1`)[-c(1,2)])
+```
+
+Here is a piece of the dataset:
+```{r}
+head(qcew_imputed$`imputation-1`, 10)
+```
+
+## 3.Use of Data
+
+We can do loops:
+```{r eval = FALSE}
+result = NULL
+for (item in names(qcew_imputed)) {
+  result[[item]] = MyAnalysis(qcew_imputed[item])
+}
+```
+
+or use future map for parallel compute:
+```{r eval = FALSE}
+result = qcew_imputed %>% 
+  future_map(
+    ~{
+      data = .
+      MyAnalysis(data)
+    }
+  )
+```
+
+Once the analysis is done, we pool the results using Robin's rule:
+```{r eval = FALSE}
+final_result = PoolResult(result)
+```
+
