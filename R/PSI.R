@@ -1,4 +1,8 @@
 ## Packages ------------------------------------------------------------------------------------
+# sudo spctl --global-disable
+library(checkpoint)
+checkpoint("2020-09-15")
+
 library(tidyverse)
 library(furrr)
 plan(multiprocess, workers = 10)
