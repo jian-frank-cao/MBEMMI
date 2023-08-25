@@ -19,6 +19,7 @@ raw_deo = files_list %>%
       paste0(deo_path,.),
       header = FALSE,
       sep = ";",
+      fileEncoding="windows-1252",
       col.names = c("Year", "Area_Type", "Area_Code", "Ownership_Code",
                     "NAICS_Short_Title", "NAICS_or_BLS_Code", "Confidentiality_Flag",
                     "Units", "Month_1_Employment", "Month_2_Employment",
@@ -35,6 +36,8 @@ raw_deo = files_list %>%
                     "Month_11_Female_Employment", "Month_12_Female_Employment", "End")
     )
   )
+
+
 
 # Save data as .Rda
 saveRDS(
