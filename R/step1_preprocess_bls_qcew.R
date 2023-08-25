@@ -1,8 +1,9 @@
+library(parallel)
+n.cores = detectCores()
 library(tidyverse)
 library(furrr)
-library(reshape2) # melt & dcast
-plan(multicore, workers = 10)
-setwd("F:/Caltech/Paul/QCEW")
+plan(multisession, workers = n.cores - 1)
+library(reshape2)
 
 owncode = 5
 naics_version = list(
@@ -12,13 +13,13 @@ naics_version = list(
 )
 
 
-## Read Rds files ----------------------------------------------------------------------------
+## Read Rds files --------------------------------------------------------------
 raw_bls = readRDS(
   file = "./data/raw_bls_qcew.Rds"
 )
 
 
-## Build bls data frames ---------------------------------------------------------------------
+## Build bls data frames -------------------------------------------------------
 data_bls = naics_version %>% 
   future_map(
     ~ {
@@ -64,8 +65,9 @@ data_bls = naics_version %>%
         )
       
       # build quarterly and monthly data frames
-      var_list_detail = c("disclosure_code", "qtrly_estabs_count", "emplvl_qtrly",
-                          "emplvl_monthly", "total_qtrly_wages", "avg_wkly_wage")
+      var_list_detail = c("disclosure_code", "qtrly_estabs_count",
+                          "emplvl_qtrly", "emplvl_monthly",
+                          "total_qtrly_wages", "avg_wkly_wage")
       
       data_detail = var_list_detail %>% 
         as.list %>% 
@@ -84,21 +86,24 @@ data_bls = naics_version %>%
                       melt(
                         .,
                         id.vars = c("industry_code", "qtr"),
-                        measure.vars = c("month1_emplvl", "month2_emplvl", "month3_emplvl")
+                        measure.vars = c("month1_emplvl", "month2_emplvl",
+                                         "month3_emplvl")
                       ) %>% 
                       dcast(
                         .,
                         industry_code ~ qtr,
                         mean
                       )%>% 
-                      `colnames<-`(c("industry_code", "qtr1", "qtr2", "qtr3", "qtr4"))
+                      `colnames<-`(c("industry_code", "qtr1", "qtr2",
+                                     "qtr3", "qtr4"))
                   }else if(var_name == "emplvl_monthly"){
                     out = data %>% 
                       filter(own_code == owncode) %>% 
                       melt(
                         .,
                         id.vars = c("industry_code", "qtr"),
-                        measure.vars = c("month1_emplvl", "month2_emplvl", "month3_emplvl")
+                        measure.vars = c("month1_emplvl", "month2_emplvl",
+                                         "month3_emplvl")
                       ) %>% 
                       dcast(
                         .,
@@ -117,10 +122,12 @@ data_bls = naics_version %>%
                         industry_code ~ qtr,
                         value.var = var_name
                       ) %>% 
-                      `colnames<-`(c("industry_code", "qtr1", "qtr2", "qtr3", "qtr4"))
+                      `colnames<-`(c("industry_code", "qtr1", "qtr2",
+                                     "qtr3", "qtr4"))
                   }
                   
-                  out = out[match(naics_codes$industry_code, out$industry_code), 2:ncol(out)]
+                  out = out[match(naics_codes$industry_code, out$industry_code),
+                            2:ncol(out)]
                 }
               ) %>% 
               do.call("cbind", .)
@@ -136,8 +143,9 @@ data_bls = naics_version %>%
         )
       
       # build annual data frames
-      var_list_annual = c("disclosure_code", "annual_avg_estabs_count", "annual_avg_emplvl",
-                          "total_annual_wages", "annual_avg_wkly_wage")
+      var_list_annual = c("disclosure_code", "annual_avg_estabs_count",
+                          "annual_avg_emplvl", "total_annual_wages",
+                          "annual_avg_wkly_wage")
       
       data_annual = var_list_annual %>% 
         as.list %>% 
@@ -152,7 +160,8 @@ data_bls = naics_version %>%
                   out = data %>% 
                     filter(own_code == owncode) %>% 
                     select(c("industry_code", all_of(var_name)))
-                  out = out[match(naics_codes$industry_code, out$industry_code),] %>% 
+                  out = out[match(naics_codes$industry_code,
+                                  out$industry_code),] %>% 
                     select(all_of(var_name))
                 }
               ) %>% 
@@ -174,15 +183,16 @@ data_bls = naics_version %>%
         end = end,
         naics_codes = naics_codes,
         monthly = data_detail["emplvl_monthly"],
-        qtrly = data_detail[c("disclosure_code", "qtrly_estabs_count", "emplvl_qtrly",
-                              "total_qtrly_wages", "avg_wkly_wage")],
+        qtrly = data_detail[c("disclosure_code", "qtrly_estabs_count",
+                              "emplvl_qtrly", "total_qtrly_wages",
+                              "avg_wkly_wage")],
         annual = data_annual
       )
     }
   )
 
 
-## Save data files -------------------------------------------------------------------------
+## Save data files -------------------------------------------------------------
 saveRDS(
   data_bls,
   file = "./data/data_bls_qcew.Rds"

@@ -1,8 +1,9 @@
+library(parallel)
+n.cores = detectCores()
 library(tidyverse)
 library(furrr)
-library(reshape2) # melt & dcast
-plan(multicore, workers = 10)
-setwd("F:/Caltech/Paul/QCEW")
+plan(multisession, workers = n.cores - 1)
+library(reshape2)
 
 owncode = 5
 naics_version = list(
@@ -11,13 +12,13 @@ naics_version = list(
   `v2012` = list(start = 2012, end = 2016)
 )
 
-## Read Rds files ----------------------------------------------------------------------------
+## Read Rds files --------------------------------------------------------------
 raw_deo = readRDS(
   file = "./data/raw_deo_qcew.Rds"
 )
 
 
-## Functions ---------------------------------------------------------------------------------
+## Functions -------------------------------------------------------------------
 remove_commas = function(data){
   out = gsub(",", "", data) %>%
     as.numeric
@@ -25,7 +26,7 @@ remove_commas = function(data){
 }
 
 
-## Build deo data frames ---------------------------------------------------------------------
+## Build deo data frames -------------------------------------------------------
 data_deo = naics_version %>% 
   future_map(
     ~ {
@@ -195,7 +196,7 @@ data_deo = naics_version %>%
   )
 
 
-## Save data files -------------------------------------------------------------------------
+## Save data files -------------------------------------------------------------
 saveRDS(
   data_deo,
   file = "./data/data_deo_qcew.Rds"
