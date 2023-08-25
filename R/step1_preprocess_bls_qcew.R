@@ -22,6 +22,7 @@ raw_bls = readRDS(
 ## Build bls data frames -------------------------------------------------------
 data_bls = naics_version %>% 
   future_map(
+    .options=furrr_options(seed = TRUE),
     ~ {
       # locate the target years
       start = .[["start"]]
@@ -36,6 +37,7 @@ data_bls = naics_version %>%
       # get the list of naics codes
       naics_codes = raw_bls$raw_bls_qtrly[target] %>% 
         future_map(
+          .options=furrr_options(seed = TRUE),
           ~ {
             data = .
             out = data %>% 
@@ -73,11 +75,13 @@ data_bls = naics_version %>%
         as.list %>% 
         set_names(var_list_detail) %>% 
         future_map(
+          .options=furrr_options(seed = TRUE),
           ~ {
             var_name = .
             out = raw_bls$raw_bls_qtrly[target] %>% 
               set_names(year[target]) %>% 
               future_map(
+                .options=furrr_options(seed = TRUE),
                 ~ {
                   data = .
                   if (var_name == "emplvl_qtrly") {
@@ -151,10 +155,12 @@ data_bls = naics_version %>%
         as.list %>% 
         set_names(var_list_annual) %>% 
         future_map(
+          .options=furrr_options(seed = TRUE),
           ~ {
             var_name = .
             out = raw_bls$raw_bls_annual[target] %>% 
               future_map(
+                .options=furrr_options(seed = TRUE),
                 ~ {
                   data = .
                   out = data %>% 

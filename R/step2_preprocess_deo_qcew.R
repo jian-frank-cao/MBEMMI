@@ -12,6 +12,7 @@ naics_version = list(
   `v2012` = list(start = 2012, end = 2016)
 )
 
+
 ## Read Rds files --------------------------------------------------------------
 raw_deo = readRDS(
   file = "./data/raw_deo_qcew.Rds"
