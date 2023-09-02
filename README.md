@@ -8,12 +8,12 @@ MBEMMI - A Fast and Accurate Multiple Imputation Method for Missing Values in La
 
 
 ### step1a_read_bls.R
-**Usage**: Reads the raw BLS QCEW data files under "./data/BLS/" (data not available).\
+**Usage**: Reads the raw BLS QCEW data files under "./data/BLS/".\
 **Output**: ./data/raw_bls_qcew.Rds\
 **Format**: List of data frames that store the raw data. Each data frame is a csv file.
 
 ### step1b_read_deo.R
-**Usage**: Reads the raw DEO QCEW data files under "./data/DEO/" (data not available).\
+**Usage**: Reads the raw DEO QCEW data files under "./data/DEO/".\
 **Output**: ./data/raw_deo_qcew.Rds\
 **Format**: List of data frames that store the raw data. Each data frame is a csv file.
 
