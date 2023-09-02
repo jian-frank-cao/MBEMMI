@@ -249,10 +249,10 @@ data$suppressed$annual[disclosure_annual == "N" |
 data$suppressed$annual_orig[disclosure_annual == "N" |
                               disclosure_annual == "-"] = NA
 
-saveRDS(
-  data,
-  "./data/qcew_ready.Rds"
-)
+# saveRDS(
+#   data,
+#   "./data/qcew_ready.Rds"
+# )
 
 
 ## Handle 2-digit industries ---------------------------------------------------
