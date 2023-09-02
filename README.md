@@ -11,7 +11,9 @@ MBEMMI - A Fast and Accurate Multiple Imputation Method for Missing Values in La
 
 <br>
 
-    # source("./R/step0_setup.R")
+``` r
+# source("./R/step0_setup.R")
+```
 
 ## 1. Read Raw QCEW Data
 
@@ -28,7 +30,9 @@ is a csv file.
 
 <br>
 
-    # source("./R/step1a_read_bls.R")
+``` r
+# source("./R/step1a_read_bls.R")
+```
 
 ### 1.2 Read CSV Files from DEO
 
@@ -43,7 +47,9 @@ is a csv file.
 
 <br>
 
-    # source("./R/step1b_read_deo.R")
+``` r
+# source("./R/step1b_read_deo.R")
+```
 
 ## 2. Preprocess QCEW Data
 
@@ -51,8 +57,8 @@ is a csv file.
 
 **Script**: `./R/step2a_preprocess_bls.R`
 
-**Object**: Reads “./data/raw\_bls\_qcew.Rds” and reformats the data
-into time series.
+**Object**: Reads “./data/raw_bls_qcew.Rds” and reformats the data into
+time series.
 
 **Output**: `./data/data_bls_qcew.Rds`
 
@@ -63,14 +69,16 @@ quarterly, annual).
 
 <br>
 
-    # source("./R/step2a_preprocess_bls.R")
+``` r
+# source("./R/step2a_preprocess_bls.R")
+```
 
 ### 2.2 Preprocess DEO Data
 
 **Script**: `./R/step2b_preprocess_deo.R`
 
-**Object**: Reads “./data/raw\_deo\_qcew.Rds” and reformats the data
-into time series.
+**Object**: Reads “./data/raw_deo_qcew.Rds” and reformats the data into
+time series.
 
 **Output**: `./data/data_deo_qcew.Rds`
 
@@ -81,14 +89,16 @@ quarterly, annual).
 
 <br>
 
-    # source("./R/step2b_preprocess_deo.R")
+``` r
+# source("./R/step2b_preprocess_deo.R")
+```
 
 ### 2.3 Merge BLS and DEO Data
 
 **Script**: `./R/step3_merge.R`
 
-**Object**: Reads “./data/data\_bls\_qcew.Rds” and
-“./data/data\_deo\_qcew.Rds” and constructs new employment time series
+**Object**: Reads “./data/data_bls_qcew.Rds” and
+“./data/data_deo_qcew.Rds” and constructs new employment time series
 using unsuppressed employment data from DEO and suppression positions
 from BLS. It also separates the mixed 2-digit industries (e.g. seperates
 industry “31-33” into 31, 32, and 33).
@@ -102,30 +112,34 @@ BLS establishment data.
 
 <br>
 
-    # source("./R/step3_merge.R")
+``` r
+# source("./R/step3_merge.R")
+```
 
 ## 3. Random Suppression
 
 **Script**: `./R/step4_suppression.R`
 
-**Object**: Reads “./data/qcew\_2digit\_fixed.Rds” and applies random
+**Object**: Reads “./data/qcew_2digit_fixed.Rds” and applies random
 primary suppression and recursive secondary suppression. Outputs 50
 randomly suppressed data sets.
 
 **Output**: `./data/qcew_rnd_suppression.Rds`
 
 **Format**: List of 50 randomly suppressed data sets. Each data set has
-the same format as in “./data/qcew\_2digit\_fixed.Rds”.
+the same format as in “./data/qcew_2digit_fixed.Rds”.
 
 <br>
 
-    # source("./R/step4_suppression.R")
+``` r
+# source("./R/step4_suppression.R")
+```
 
 ## 4. Multiple Imputation
 
 **Script**: `./R/step5_imputatoin.R`
 
-**Object**: Reads “./data/qcew\_rnd\_suppression.Rds” and applies
+**Object**: Reads “./data/qcew_rnd_suppression.Rds” and applies
 PSI-MBEMMI, BMMI, and EMB methods to obtain imputed data sets.
 
 **Output**: `./data/QCEW_imputations.Rds`
@@ -135,5 +149,6 @@ are NAICS codes, columns are time.
 
 <br>
 
-    # source("./R/step5_imputatoin.R")
-
+``` r
+# source("./R/step5_imputatoin.R")
+```
