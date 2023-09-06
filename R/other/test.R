@@ -58,49 +58,117 @@ result = 1:n_imputation %>%
 
 
 
+method = "MBEMMI"
+imputation = NULL
+n_imputation = 1
 
 data_imputed = data_qcew$suppressed$qtrly
 for (level in 1:length(blocks)) {
   data_level = blocks[[level]]
   if (length(data_level) > 0) {
-    result = data_level %>% 
-      future_map(
-        ~{
-          data = .
-          code_higher = colnames(data$q_total)
-          code_lower = colnames(data$detail)
-          if (any(is.na(data$q_total))) {  
-            data$q_total = data_imputed %>%
-              filter(industry_code %in% code_higher) %>% 
-              dplyr::select(-c("industry_code", "industry_title")) %>% 
-              t %>% 
-              data.frame %>% 
-              `colnames<-`(code_higher)
-          }
-          if (length(code_lower) > 1) {
-            if (method == "MBEMMI") {
-              MBEMMI(data, n_imputation = 1)[[1]][["data_final"]][[1]] # solve sobol seq problem + add qmc at simulation
-            }else if(method == "BMMI"){
-              BMMI(data, n_imputation = 1)[[1]]
-            }else if(method == "EMB"){
-              EMB(data, n_imputation = 1)[[1]]
-            }
-          }else{
-            list()
-          }
-        }
-      )
     for (item in names(data_level)) {
-      code_lower = colnames(data_level[[item]]$detail)
-      code_higher = colnames(data_level[[item]]$q_total)
+      data = data_level[[item]]
+      code_higher = colnames(data$q_total)
+      code_lower = colnames(data$detail)
+      if (any(is.na(data$q_total))) {  
+        data$q_total = data_imputed %>%
+          filter(industry_code %in% code_higher) %>% 
+          dplyr::select(-c("industry_code", "industry_title")) %>% 
+          t %>% 
+          data.frame %>% 
+          `colnames<-`(code_higher)
+      }
       if (length(code_lower) > 1) {
-        data_imputed[data_imputed$industry_code %in% code_lower,
-                     3:ncol(data_imputed)] = result[[item]] %>% t
+        if (method == "MBEMMI") {
+          result = MBEMMI(data, n_imputation = 1)[[1]][["data_final"]][[1]] # solve sobol seq problem + add qmc at simulation
+        }else if(method == "BMMI"){
+          result = BMMI(data, n_imputation = 1)[[1]]
+        }else if(method == "EMB"){
+          result = EMB(data, n_imputation = 1)[[1]]
+        }
       }else{
-        data_imputed[data_imputed$industry_code %in% code_lower,
-                     3:ncol(data_imputed)] = data_imputed[data_imputed$industry_code %in% code_higher,
-                                                          3:ncol(data_imputed)]
+        result = list()
       }
     }
+    
+    # result = data_level %>% 
+    #   future_map(
+    #     ~{
+    #       data = .
+    #       code_higher = colnames(data$q_total)
+    #       code_lower = colnames(data$detail)
+    #       if (any(is.na(data$q_total))) {  
+    #         data$q_total = data_imputed %>%
+    #           filter(industry_code %in% code_higher) %>% 
+    #           dplyr::select(-c("industry_code", "industry_title")) %>% 
+    #           t %>% 
+    #           data.frame %>% 
+    #           `colnames<-`(code_higher)
+    #       }
+    #       if (length(code_lower) > 1) {
+    #         if (method == "MBEMMI") {
+    #           MBEMMI(data, n_imputation = 1)[[1]][["data_final"]][[1]] # solve sobol seq problem + add qmc at simulation
+    #         }else if(method == "BMMI"){
+    #           BMMI(data, n_imputation = 1)[[1]]
+    #         }else if(method == "EMB"){
+    #           EMB(data, n_imputation = 1)[[1]]
+    #         }
+    #       }else{
+    #         list()
+    #       }
+    #     }
+    #   )
+    
+    
+    # for (item in names(data_level)) {
+    #   code_lower = colnames(data_level[[item]]$detail)
+    #   code_higher = colnames(data_level[[item]]$q_total)
+    #   if (length(code_lower) > 1) {
+    #     data_imputed[data_imputed$industry_code %in% code_lower,
+    #                  3:ncol(data_imputed)] = result[[item]] %>% t
+    #   }else{
+    #     data_imputed[data_imputed$industry_code %in% code_lower,
+    #                  3:ncol(data_imputed)] = data_imputed[data_imputed$industry_code %in% code_higher,
+    #                                                       3:ncol(data_imputed)]
+    #   }
+    # }
   }
 }
+
+
+level = 2
+item = "212"
+data_level = blocks[[level]]
+data = data_level[[item]]
+code_higher = colnames(data$q_total)
+code_lower = colnames(data$detail)
+if (any(is.na(data$q_total))) {  
+  data$q_total = data_imputed %>%
+    filter(industry_code %in% code_higher) %>% 
+    dplyr::select(-c("industry_code", "industry_title")) %>% 
+    t %>% 
+    data.frame %>% 
+    `colnames<-`(code_higher)
+}
+if (length(code_lower) > 1) {
+  if (method == "MBEMMI") {
+    result = MBEMMI(data, n_imputation = 1)[[1]][["data_final"]][[1]] # solve sobol seq problem + add qmc at simulation
+  }else if(method == "BMMI"){
+    result = BMMI(data, n_imputation = 1)[[1]]
+  }else if(method == "EMB"){
+    result = EMB(data, n_imputation = 1)[[1]]
+  }
+}else{
+  result = list()
+}
+
+
+
+
+output = randtoolbox::sobol(
+  n = 100,
+  dim = 3,
+  init = TRUE,
+  scrambling = 2, # Owen type
+  seed = 123
+)
