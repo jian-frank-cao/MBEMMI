@@ -172,3 +172,77 @@ output = randtoolbox::sobol(
   scrambling = 2, # Owen type
   seed = 123
 )
+
+
+
+
+level = 2
+item = "212"
+data_level = blocks[[level]]
+data = data_level[[item]]
+data2= data
+data_raw <- data
+
+n_industry <<- data_raw$detail %>% ncol
+n_time <<- data_raw$detail %>% nrow
+n_time_per_year <<- 4
+n_polytime <<- 3
+n_imputation <<- 10
+n_simulation <<- 1
+n_year <<- n_time/n_time_per_year
+
+data_raw = clean_data(data_raw)
+
+qmc_boots = TRUE
+qmc_simulation = TRUE
+tol = 0.00001
+sobol_seq = NULL          ### change this
+max_inter = 10000
+sobol_max_burn = 1000
+sobol_scrambling = 0
+sobol_seed = 316
+
+n_row = n_time,
+n_bootstrap = n_imputation * 5,
+qmc = qmc_boots,
+sobol_seq = sobol_seq,
+max_burn = sobol_max_burn,
+scrambling = sobol_scrambling,
+seed = sobol_seed
+
+boots_result = bootstrapping(n_time, n_imputation * 5,
+                             sobol_seq = sobol_seq, qmc = qmc_boots) # get redundant ones for higher missing rate blocks
+boots_raw = boots_result$ind_boots
+boots_sobol_seq = boots_result$sobol_seq
+
+# missing types
+missing = is.na(data_raw$detail_with_aux)
+miss_types = unique(missing)
+miss_type_ind = prodlim::row.match(
+  missing %>% data.frame,
+  miss_types %>% data.frame
+)
+
+a = sweep(theta, 1)
+b = sweep_old(theta, 1)
+sum(colSums(a == b))
+theta = sweep(theta, sweep_pos) 
+a = sweep(theta, sweep_pos)
+b = sweep_old(theta, sweep_pos)
+sum(colSums(a == b))
+
+
+data = data0
+a = E_step(data)
+b = E_step_old(data)
+sum(colSums(a$V == b$V))
+nrow(a$V)*ncol(a$V)
+
+data = data0
+data = E_step(data)
+a = MSU_step(data)
+b = MSU_step_old(data)
+sum(colSums(a$gamma_y == b$gamma_y))
+nrow(a$gamma_y)*ncol(a$gamma_y)
+
+
