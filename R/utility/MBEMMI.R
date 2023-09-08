@@ -72,7 +72,7 @@ clean_data <- function(data, n_polytime = 3){
   }else{
     data$detail_with_aux <- cbind(
       data$detail,
-      create_polytime(n_polytime)
+      create_polytime(n_time, n_polytime)
     )
   }
   
@@ -182,10 +182,12 @@ bootstrapping <- function(n_row, n_bootstrap, qmc = TRUE,
 
 
 ## Functions to prepare data for imputation ------------------------------------
-prepare_data <- function(data_raw, boots, miss_bool, miss_types,
-                         miss_type_ind, n_time, n_year, n_industry) {
+prepare_data <- function(data_raw, boots,
+                         miss_bool, miss_types, miss_type_ind,
+                         n_time, n_time_per_year, n_industry) {
   
   # Initial data assignments
+  n_year = n_time/n_time_per_year
   data_orig <- as.matrix(data_raw$detail_with_aux)
   data_boots <- as.matrix(data_raw$detail_with_aux[boots$orig_boots,])
   miss_orig <- miss_bool
@@ -209,6 +211,10 @@ prepare_data <- function(data_raw, boots, miss_bool, miss_types,
   
   # Construct the main data list
   data <- list(
+    n_time = n_time,
+    n_time_per_year = n_time_per_year,
+    n_year = n_year,
+    n_industry = n_industry,
     orig_boots = boots$orig_boots,
     boots_orig = boots$boots_orig,
     data_orig = data_orig,
@@ -223,7 +229,7 @@ prepare_data <- function(data_raw, boots, miss_bool, miss_types,
     q_total = matrix(data_raw$q_total[[1]], ncol = n_year),
     a_total = t(data_raw$a_total),
     a_q_total = NULL,
-    H = create_H(n_time, n_year, n_industry)
+    H = create_H(n_time, n_time_per_year, n_industry)
   )
   
   return(data)
@@ -311,7 +317,7 @@ E_step <- function(data) {
   Q_eStep <- t(data$data_orig) %*% data$data_orig + add_var
   
   # Compute V matrix for multi-scale step
-  data$V <- diag(sweep(Q_eStep, 1))[2:(n_industry + 1)] %>% 
+  data$V <- diag(sweep(Q_eStep, 1))[2:(data$n_industry + 1)] %>% 
     rep(., each = 4) %>% 
     diag
   
@@ -343,8 +349,7 @@ create_trans_z_y <- function(n_time, n_year, n_industry){
 }
 
 # create transform matrix H
-create_H <- function(n_time, n_year, n_industry){
-  n_time_per_year <- n_time/n_year
+create_H <- function(n_time, n_time_per_year, n_industry){
   output <- rbind(
     diag(1, n_time_per_year * n_industry),
     matlab::repmat(diag(1, n_time_per_year), 1, n_industry),
@@ -357,9 +362,10 @@ create_H <- function(n_time, n_year, n_industry){
 
 # MSU_step
 MSU_step <- function(data){
+  
   # transform data into z vector
-  z <- data$data_orig[, 2:(n_industry + 1)][data$y_z] %>% 
-    matrix(., ncol = n_year) %>% 
+  z <- data$data_orig[, 2:(data$n_industry + 1)][data$y_z] %>% 
+    matrix(., ncol = data$n_year) %>% 
     rbind(., data$q_total, data$a_total, data$a_q_total)
   
   # store means and variances of the missing values
@@ -369,7 +375,7 @@ MSU_step <- function(data){
   data$omega_y <- NULL
   data$add_var_MSU <- data$Q * 0
   
-  for (year in 1:n_year) {
+  for (year in 1:data$n_year) {
     if (sum(data$miss_z[, year]) != 0) {
       # prepare z_target and H
       z_target <- z[, year]
@@ -381,13 +387,13 @@ MSU_step <- function(data){
       H <- H[available_z,]
       
       # construct mu and sigma
-      mu <- H %*% z_target[1:(n_time_per_year*n_industry)]
+      mu <- H %*% z_target[1:(data$n_time_per_year*data$n_industry)]
       sigma <- H %*% data$V %*% t(H)
       
       # get indices for missing and observed values
       ind_miss <- c(
         data$miss_z[, year],
-        rep(FALSE, length(z_target) - n_time_per_year * n_industry)
+        rep(FALSE, length(z_target) - data$n_time_per_year * data$n_industry)
       )
       ind_obs <- !ind_miss
       
@@ -423,27 +429,27 @@ MSU_step <- function(data){
       
       # store omega_m
       data$omega_m[[year]] <- omega_m
-      order_m_start <- (n_time_per_year * (year - 1) + 1)
-      order_m_end <- (n_time_per_year * year)
+      order_m_start <- (data$n_time_per_year * (year - 1) + 1)
+      order_m_end <- (data$n_time_per_year * year)
       order_m <- data$miss_orig[order_m_start:order_m_end, ] * 1
       order_m[order_m == 1] <- 1:sum(ind_miss)
       
-      for (time in 1:n_time_per_year) {
+      for (time in 1:data$n_time_per_year) {
         ind_Q <- (order_m[time, ] != 0) %>% which
         ind_omega_m <- order_m[time, ind_Q]
         
-        data$omega_y[[n_time_per_year * (year - 1) + time]] <- data$Q * 0
-        data$omega_y[[n_time_per_year * (year - 1) + time]][ind_Q, ind_Q] <- 
+        data$omega_y[[data$n_time_per_year * (year-1) + time]] <- data$Q * 0
+        data$omega_y[[data$n_time_per_year * (year-1) + time]][ind_Q, ind_Q] <- 
           omega_m[ind_omega_m, ind_omega_m]
         data$add_var_MSU <- data$add_var_MSU + 
-          data$omega_y[[n_time_per_year * (year - 1) + time]]
+          data$omega_y[[data$n_time_per_year * (year - 1) + time]]
       }
     }
   }
   
   # transform gamma to y format
   data$gamma_y <- data$data_orig * 0
-  data$gamma_y[, 2:(n_industry + 1)] <- data$gamma_z[as.vector(data$z_y)]
+  data$gamma_y[, 2:(data$n_industry + 1)] <- data$gamma_z[as.vector(data$z_y)]
   
   return(data)
 }
@@ -567,14 +573,14 @@ sim_miss <- function(data, n_sim,
     gamma_m <- data$gamma_m[[year]]
     omega_m <- data$omega_m[[year]]
     d <- length(gamma_m)
-    impute_ind <- data$y_z[, year][data$miss_z[, year]] + n_time
+    impute_ind <- data$y_z[, year][data$miss_z[, year]] + data$n_time
     
     # simulation
     for (sim in 1:n_sim) {
       ys <- rtmvn_sig(
         n = 1,
         Mean = gamma_m,
-        Sigma = omega_m,
+        Sigma = round(omega_m, 15),
         lower = rep(lower, d),
         upper = rep(upper, d),
         burn = burn,
@@ -599,9 +605,9 @@ MBEMMI <- function(data_raw, n_time_per_year = 4, n_polytime = 3,
   # Define parameters
   n_industry <- ncol(data_raw$detail)
   n_time <- nrow(data_raw$detail)
-  
+
   # Clean the raw data
-  data_raw <- clean_data(data_raw)
+  data_raw <- clean_data(data_raw, n_polytime = n_polytime)
   
   # Generate bootstrapping indices
   boots_result <- bootstrapping(
@@ -645,7 +651,7 @@ MBEMMI <- function(data_raw, n_time_per_year = 4, n_polytime = 3,
       # Prepare data
       data <- prepare_data(data_raw, boots, miss_bool,
                            miss_types, miss_type_ind,
-                           n_time, n_year, n_industry)
+                           n_time, n_time_per_year, n_industry)
       
       # Construct initial sufficient statistics Q
       data$Q <- t(data$data_boots) %*% data$data_boots
