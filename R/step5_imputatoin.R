@@ -91,7 +91,7 @@ partition_data = function(data_qcew){
 }
 
 ## PSI -------------------------------------------------------------------------
-PSI = function(data_qcew, method = "MBEMMI",
+PSI_old = function(data_qcew, method = "MBEMMI",
                n_imputation = 10, ...){
   
   # partition data
@@ -153,6 +153,24 @@ PSI = function(data_qcew, method = "MBEMMI",
     )
   
   return(result)
+}
+
+
+PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
+                parallel_imp = TRUE, parallel_level = FALSE, ...){
+  # define map type
+  fun_map_imp <- ifelse(parallel_imp, future_map, map)
+  fun_map_level <- ifelse(parallel_level, future_map, map)
+  
+  # partition data
+  blocks <- partition_data(data_qcew)
+  
+  # generate sobol sequence
+  n_time <- nrow(blocks[[1]][[1]][[1]])
+  n_block <- sum(sapply(blocks, length))
+  sobol_seq <- prepare_sobol(n = n_time * n_block, dim = n_imp * 5)
+  
+  
 }
 
 

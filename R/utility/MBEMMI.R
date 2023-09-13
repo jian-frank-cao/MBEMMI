@@ -596,7 +596,7 @@ sim_miss <- function(data, n_sim,
 
 ## MBEMMI ----------------------------------------------------------------------
 MBEMMI <- function(data_raw, n_time_per_year = 4, n_polytime = 3,
-                   n_imputation = 10, n_sim = 1,
+                   n_imp = 10, n_sim = 1,
                    qmc_boots = TRUE, sobol_seq = NULL, 
                    sobol_max_burn = 1000, sobol_scrambling = 0,
                    sobol_seed = 316, parallel = FALSE,
@@ -612,7 +612,7 @@ MBEMMI <- function(data_raw, n_time_per_year = 4, n_polytime = 3,
   # Generate bootstrapping indices
   boots_result <- bootstrapping(
     n_row = n_time,
-    n_bootstrap = n_imputation * 5,
+    n_bootstrap = n_imp * 5,
     qmc = qmc_boots,
     sobol_seq = sobol_seq,
     max_burn = sobol_max_burn,
@@ -631,13 +631,13 @@ MBEMMI <- function(data_raw, n_time_per_year = 4, n_polytime = 3,
   miss_all <- sapply(boots_ind, function(boot) {
     any(colSums(miss_bool[boot$orig_boots, ]) == n_time)
   })
-  boots_ind <- boots_ind[!miss_all][1:n_imputation]
+  boots_ind <- boots_ind[!miss_all][1:n_imp]
   
   
   # Imputation
   fun_map <- ifelse(parallel, future_map2, map2)
   result <- fun_map(
-    as.list(1:n_imputation),
+    as.list(1:n_imp),
     boots_ind,
     ~{
       # Define parameters
@@ -686,7 +686,7 @@ MBEMMI <- function(data_raw, n_time_per_year = 4, n_polytime = 3,
           if (Q_diff < tol) {
             converged <- TRUE
           }else if (Q_diff > 10000 | iter_count > max_inter){
-            toasted = TRUE
+            toasted <- TRUE
           }
 
           print(paste0("Iteration: ", iter_count, ", Q_diff: ", Q_diff, "."))
