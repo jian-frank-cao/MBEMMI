@@ -216,27 +216,27 @@ PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
 
 ## Run -------------------------------------------------------------------------
 for (i in c(8,10)) {
-  cat(paste0("Data set: ", i, ", Method: MBEMMI ........ Start..."))
+  cat(paste0("Data set: ", i, ", Method: MBEMMI ........ Start...\n"))
   set.seed(1234)
   result_MBEMMI = PSI(list_data_qcew[[i]], method = "MBEMMI", n_sim = 10)
   saveRDS(result_MBEMMI, paste0("./data/imputations_MBEMMI_", i, ".Rds"))
-  cat(paste0("Data set: ", i, ", Method: MBEMMI ........ Done."))
+  cat(paste0("Data set: ", i, ", Method: MBEMMI ........ Done.\n"))
 }
 
 for (i in 1:length(list_data_qcew)) {
-  cat(paste0("Data set: ", i, ", Method: BMMI ........ Start..."))
+  cat(paste0("Data set: ", i, ", Method: BMMI ........ Start...\n"))
   set.seed(1234)
   result_BMMI = PSI(list_data_qcew[[i]], method = "BMMI", n_sim = 10)
   saveRDS(result_BMMI, paste0("./data/imputations_BMMI_", i, ".Rds"))
-  cat(paste0("Data set: ", i, ", Method: BMMI ........ Done."))
+  cat(paste0("Data set: ", i, ", Method: BMMI ........ Done.\n"))
 }
 
 for (i in 1:length(list_data_qcew)) {
-  cat(paste0("Data set: ", i, ", Method: EMB ........ Start..."))
+  cat(paste0("Data set: ", i, ", Method: EMB ........ Start...\n"))
   set.seed(1234)
   result_EMB = PSI(list_data_qcew[[i]], method = "EMB", n_sim = 10)
   saveRDS(result_EMB, paste0("./data/imputations_EMB_", i, ".Rds"))
-  cat(paste0("Data set: ", i, ", Method: EMB ........ Done."))
+  cat(paste0("Data set: ", i, ", Method: EMB ........ Done.\n"))
 }
 
 
