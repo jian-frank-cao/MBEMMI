@@ -494,6 +494,13 @@ rtmvn_sig <- function(n, Mean, Sigma, D = diag(1, length(Mean)),
     }
     a <- lower - Rtilde %*% Mean
     b <- upper - Rtilde %*% Mean
+    
+    # check Sigma is symmetric -------->
+    if (!identical(Sigma, t(Sigma))) {
+      Sigma[lower.tri(Sigma)] <- t(Sigma)[lower.tri(Sigma)]
+    }
+    # end --------------------<
+    
     # gchol -------->
     eig_result = eigen(Sigma)
     Sigma_D = round(eig_result$values, 12)
@@ -504,8 +511,10 @@ rtmvn_sig <- function(n, Mean, Sigma, D = diag(1, length(Mean)),
     Sigma_P = round(eig_result$vectors, 12)
     Sigma.chol = Sigma_P %*% diag(Sigma_D)^0.5
     # end ----------<
+    
     R <- Rtilde %*% Sigma.chol
     p <- ncol(R)
+    
     # use zeros as initials ---------->
     z <- rep(0, length(Mean))
     # end ----------------------------<

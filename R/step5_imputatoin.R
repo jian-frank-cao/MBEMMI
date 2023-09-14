@@ -104,7 +104,7 @@ PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
   blocks <- partition_data(data_qcew)
   
   # generate sobol sequence
-  n_time <- nrow(blocks[[1]][[1]][[1]])
+  n_time <- nrow(blocks[[3]][[1]][[1]])
   n_block <- sum(sapply(blocks, length))
   sobol_seq <- prepare_sobol(n = n_time * n_block, dim = n_imp * 5)
   list_sobol_imp <- lapply(1:n_imp, function(i){
@@ -215,16 +215,29 @@ PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
 
 
 ## Run -------------------------------------------------------------------------
-for (i in 1:length(list_data_qcew)) {
-  print(i)
+for (i in c(8,10)) {
+  cat(paste0("Data set: ", i, ", Method: MBEMMI ........ Start..."))
   set.seed(1234)
   result_MBEMMI = PSI(list_data_qcew[[i]], method = "MBEMMI", n_sim = 10)
   saveRDS(result_MBEMMI, paste0("./data/imputations_MBEMMI_", i, ".Rds"))
+  cat(paste0("Data set: ", i, ", Method: MBEMMI ........ Done."))
 }
 
-result_MBEMMI = PSI(data_qcew, method = "MBEMMI", n_sim = 10)
-result_BMMI = PSI(data_qcew, method = "BMMI", n_sim = 10)
-result_EMB = PSI(data_qcew, method = "EMB", n_sim = 10)
+for (i in 1:length(list_data_qcew)) {
+  cat(paste0("Data set: ", i, ", Method: BMMI ........ Start..."))
+  set.seed(1234)
+  result_BMMI = PSI(list_data_qcew[[i]], method = "BMMI", n_sim = 10)
+  saveRDS(result_BMMI, paste0("./data/imputations_BMMI_", i, ".Rds"))
+  cat(paste0("Data set: ", i, ", Method: BMMI ........ Done."))
+}
+
+for (i in 1:length(list_data_qcew)) {
+  cat(paste0("Data set: ", i, ", Method: EMB ........ Start..."))
+  set.seed(1234)
+  result_EMB = PSI(list_data_qcew[[i]], method = "EMB", n_sim = 10)
+  saveRDS(result_EMB, paste0("./data/imputations_EMB_", i, ".Rds"))
+  cat(paste0("Data set: ", i, ", Method: EMB ........ Done."))
+}
 
 
 
