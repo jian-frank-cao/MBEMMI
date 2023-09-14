@@ -497,6 +497,10 @@ rtmvn_sig <- function(n, Mean, Sigma, D = diag(1, length(Mean)),
     # gchol -------->
     eig_result = eigen(Sigma)
     Sigma_D = round(eig_result$values, 12)
+    ind_zero = which(abs(Sigma_D) < 0.1^10)       ### correct zeros
+    if (length(ind_zero) > 0) {
+      Sigma_D[min(ind_zero):length(Sigma_D)] = 0  ###
+    }
     Sigma_P = round(eig_result$vectors, 12)
     Sigma.chol = Sigma_P %*% diag(Sigma_D)^0.5
     # end ----------<
@@ -580,7 +584,7 @@ sim_miss <- function(data, n_sim,
       ys <- rtmvn_sig(
         n = 1,
         Mean = gamma_m,
-        Sigma = round(omega_m, 15),
+        Sigma = round(omega_m, 10),
         lower = rep(lower, d),
         upper = rep(upper, d),
         burn = burn,

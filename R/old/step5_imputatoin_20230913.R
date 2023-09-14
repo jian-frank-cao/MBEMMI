@@ -13,10 +13,9 @@ source("./R/utility/EMB.R")
 
 ## Read data -------------------------------------------------------------------
 # data_qcew = readRDS("./data/qcew_2digit_fixed.Rds")
-list_data_qcew = readRDS("./data/qcew_rnd_suppression.Rds")
+data_qcew = readRDS("./data/qcew_rnd_suppression.Rds")[[1]]
 
-## Functions -------------------------------------------------------------------
-# Functions to partition data
+## Functions to partition data -------------------------------------------------
 partition_data = function(data_qcew){
   
   blocks = 2:5 %>% 
@@ -47,10 +46,8 @@ partition_data = function(data_qcew){
           future_map(
             ~{
               block = .
-              ind_digit = nchar(block$industry_code) == digit
-              ind_digit_1 = nchar(block$industry_code) == digit + 1
-              code_higher = block$industry_code[ind_digit]
-              code_lower = block$industry_code[ind_digit_1]
+              code_higher = block$industry_code[nchar(block$industry_code) == digit]
+              code_lower = block$industry_code[nchar(block$industry_code) == digit + 1]
               list(
                 detail = block %>%
                   filter(industry_code %in% code_lower) %>% 
@@ -93,7 +90,72 @@ partition_data = function(data_qcew){
   return(blocks)
 }
 
-# Parallel Sequential Imputation
+## PSI -------------------------------------------------------------------------
+PSI_old = function(data_qcew, method = "MBEMMI",
+               n_imputation = 10, ...){
+  
+  # partition data
+  blocks = partition_data(data_qcew)
+  
+  # imputation
+  result = 1:n_imputation %>% 
+    as.list %>% 
+    set_names(paste0("imputation-", 1:n_imputation)) %>% 
+    future_map(
+      ~{
+        data_imputed = data_qcew$suppressed$qtrly
+        for (level in 1:length(blocks)) {
+          data_level = blocks[[level]]
+          if (length(data_level) > 0) {
+            result = data_level %>% 
+              future_map(
+                ~{
+                  data = .
+                  code_higher = colnames(data$q_total)
+                  code_lower = colnames(data$detail)
+                  if (any(is.na(data$q_total))) {  
+                    data$q_total = data_imputed %>%
+                      filter(industry_code %in% code_higher) %>% 
+                      dplyr::select(-c("industry_code", "industry_title")) %>% 
+                      t %>% 
+                      data.frame %>% 
+                      `colnames<-`(code_higher)
+                  }
+                  if (length(code_lower) > 1) {
+                    if (method == "MBEMMI") {
+                      MBEMMI(data, n_imputation = 1)[[1]][["data_final"]][[1]] # solve sobol seq problem + add qmc at simulation
+                    }else if(method == "BMMI"){
+                      BMMI(data, n_imputation = 1)[[1]]
+                    }else if(method == "EMB"){
+                      EMB(data, n_imputation = 1)[[1]]
+                    }
+                  }else{
+                    list()
+                  }
+                }
+              )
+            for (item in names(data_level)) {
+              code_lower = colnames(data_level[[item]]$detail)
+              code_higher = colnames(data_level[[item]]$q_total)
+              if (length(code_lower) > 1) {
+                data_imputed[data_imputed$industry_code %in% code_lower,
+                             3:ncol(data_imputed)] = result[[item]] %>% t
+              }else{
+                data_imputed[data_imputed$industry_code %in% code_lower,
+                             3:ncol(data_imputed)] = data_imputed[data_imputed$industry_code %in% code_higher,
+                                                                  3:ncol(data_imputed)]
+              }
+            }
+          }
+        }
+        data_imputed
+      }
+    )
+  
+  return(result)
+}
+
+
 PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
                 parallel_imp = TRUE, parallel_level = FALSE, ...){
   # define map type
@@ -172,12 +234,7 @@ PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
                 }else if(method == "BMMI"){
                   BMMI(data, n_imputation = 1)[[1]]
                 }else if(method == "EMB"){
-                  res <- EMB(data, n_imputation = 1)[[1]]
-                  if (length(res) == 1) {
-                    res
-                  }else{
-                    data$detail
-                  }
+                  EMB(data, n_imputation = 1)[[1]]
                 }
               }else{
                 list()
@@ -215,16 +272,7 @@ PSI <- function(data_qcew, method = "MBEMMI", n_imp = 10,
 
 
 ## Run -------------------------------------------------------------------------
-for (i in 1:length(list_data_qcew)) {
-  print(i)
-  set.seed(1234)
-  result_MBEMMI = PSI(list_data_qcew[[i]], method = "MBEMMI", n_sim = 10)
-  saveRDS(result_MBEMMI, paste0("./data/imputations_MBEMMI_", i, ".Rds"))
-}
-
 result_MBEMMI = PSI(data_qcew, method = "MBEMMI", n_sim = 10)
-result_BMMI = PSI(data_qcew, method = "BMMI", n_sim = 10)
-result_EMB = PSI(data_qcew, method = "EMB", n_sim = 10)
 
 
 
