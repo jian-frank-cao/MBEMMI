@@ -31,3 +31,36 @@ true1 = data_qcew[["true"]][["qtrly"]][selection1,]
 write.csv(industry1, "./data/QCEW_less_than_40_suppressed.csv")
 write.csv(estab1, "./data/QCEW_less_than_40_establishment.csv")
 write.csv(true1, "./data/QCEW_less_than_40_true.csv")
+
+
+## two digit level -------------------------------------------------------------
+data = data_qcew$true$qtrly %>%
+  filter(nchar(industry_code) == 2 | industry_code == "333242")
+
+Manufacturing = data %>%
+  filter(industry_code %in% c("31", "32", "33")) %>% 
+  mutate(industry_code = 0, industry_title = 0) %>% 
+  colSums(.)
+
+Retail = data %>%
+  filter(industry_code %in% c("44", "45")) %>% 
+  mutate(industry_code = 0, industry_title = 0) %>% 
+  colSums(.)
+
+Transportation = data %>%
+  filter(industry_code %in% c("48", "49")) %>% 
+  mutate(industry_code = 0, industry_title = 0) %>% 
+  colSums(.)
+
+out = data %>% 
+  filter(!(industry_code %in% c("10", "31", "32", "33",
+                                "44", "45", "48", "49", "99"))) %>% 
+  rbind(Manufacturing, Retail, Transportation, .)
+
+out$industry_code[1:3] = c("31-33 (exclude 333242)", "44-45", "48-49")
+out$industry_title[1:3] = c("Manufacturing (exclude 333242)", "Retail",
+                            "Transportation")
+
+out[1,3:22] = out[1,3:22] - out[8,3:22]
+
+write.csv(out, "./data/GVAR_2digit.csv")
