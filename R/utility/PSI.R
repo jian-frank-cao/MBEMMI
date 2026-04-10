@@ -66,7 +66,7 @@ PSI_slow <- function(data_qcew, method = "MBEMMI", n_imp = 10, ...){
         # impute missing values
         if (length(code_lower) == 1) {
           output = list()
-        }else if (!any(n_row_missing > 1)) {
+        }else if (!any(n_row_missing > 1) | code_higher != "336") {
           output = data$detail
         }else{
           if (method == "MBEMMI") {
@@ -81,7 +81,7 @@ PSI_slow <- function(data_qcew, method = "MBEMMI", n_imp = 10, ...){
             }
             output = res[["data_final"]][[1]]
           }else if(method == "BMMI"){
-            res = safe_MBEMMI(data, n_imputation = 1)
+            res = safe_BMMI(data, n_imputation = 1)
             if (!is.null(res) & length(res) > 0) {
               output = res
             }else{
@@ -91,7 +91,7 @@ PSI_slow <- function(data_qcew, method = "MBEMMI", n_imp = 10, ...){
             print(paste0("imp:", num_imp, ", code:", code_higher))
             if (num_imp == 8 & code_higher == "33999") {
               res = NULL
-            }else if(num_imp == 18 & code_higher == "336"){
+            }else if(num_imp %in% c(2,3,4) & code_higher == "336"){
               res = NULL
             }else{
               capture.output(res <- safe_EMB(data, n_imputation = 1),
@@ -136,10 +136,10 @@ PSI_slow <- function(data_qcew, method = "MBEMMI", n_imp = 10, ...){
 }
 
 
-safe_MBEMMI <- function(data, n_imputation) {
+safe_BMMI <- function(data, n_imputation) {
   tryCatch(
     {
-      output = BMMI(data, n_imputation)[[1]]
+      output = BMMI(data, n_imputation, n.iter = 5000, n.burn = 2000)[[1]]
       return(output)
     },
     error = function(e) {
@@ -148,16 +148,18 @@ safe_MBEMMI <- function(data, n_imputation) {
     }
   )
 }
-
 
 safe_EMB <- function(data, n_imputation) {
   tryCatch(
     {
-      output = R.utils::withTimeout(
-        EMB(data, n_imputation)[[1]],
-        timeout = 10,  # Timeout in seconds
-        onTimeout = "error"
-      )
+      output = callr::r(function(data, n_imputation) {
+        source("./R/utility/EMB.R")
+        R.utils::withTimeout(
+          EMB(data, n_imputation)[[1]],
+          timeout = 10,  # Timeout in seconds
+          onTimeout = "error"
+        )
+      }, args = list(data = data, n_imputation = n_imputation))
       return(output)
     },
     error = function(e) {
@@ -166,3 +168,20 @@ safe_EMB <- function(data, n_imputation) {
     }
   )
 }
+
+# safe_EMB <- function(data, n_imputation) {
+#   tryCatch(
+#     {
+#       output = R.utils::withTimeout(
+#         EMB(data, n_imputation)[[1]],
+#         timeout = 10,  # Timeout in seconds
+#         onTimeout = "error"
+#       )
+#       return(output)
+#     },
+#     error = function(e) {
+#       message("Error: ", e$message)
+#       return(NULL) 
+#     }
+#   )
+# }

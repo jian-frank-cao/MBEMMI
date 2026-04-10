@@ -272,21 +272,21 @@ for (level in blocks) {
 source("./R/utility/PSI.R")
 
 set.seed(1234)
-result_MBEMMI = PSI_slow(data_qcew, method = "MBEMMI", n_imp = 10)
+result_MBEMMI = PSI_slow(data_qcew, method = "MBEMMI", n_imp = 50)
 saveRDS(result_MBEMMI, paste0("./data/imputations_MBEMMI_florida.Rds"))
 
 set.seed(1234)
-result_BMMI = PSI_slow(data_qcew, method = "BMMI", n_imp = 10)
+result_BMMI = PSI_slow(data_qcew, method = "BMMI", n_imp = 50)
 saveRDS(result_BMMI, paste0("./data/imputations_BMMI_florida.Rds"))
 
 set.seed(1234)
-result_EMB = PSI_slow(data_qcew, method = "EMB", n_imp = 30)
+result_EMB = PSI_slow(data_qcew, method = "EMB", n_imp = 100)
 select_EMB = NULL
 for (i in 1:length(result_EMB)) {
-  if (sum(is.na(result_EMB[[i]])) == 50) {
+  if (sum(is.na(result_EMB[[i]])) == 255) {
     select_EMB = c(select_EMB, i)
   }
 }
-saveRDS(result_EMB[select_EMB[1:10]],
+saveRDS(result_EMB[select_EMB[1:50]],
         paste0("./data/imputations_EMB_florida.Rds"))
 
